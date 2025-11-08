@@ -1,0 +1,22 @@
+#include <iostream> 
+#include <algorithm> 
+#define ll long long
+using namespace std;
+ll x, y;//xŒ™≥§£¨ª≠Õº 
+ll ans;
+void till()
+{
+	if(x == 0 || y == 0)return;
+	ll temp = min(x, y);
+	ans += 4*temp;
+	if (temp == y)x-=temp;
+	else y-=temp;
+	till();
+}
+int main()
+{
+	cin >> x >> y;
+	till();//µ›πÈ÷÷ÃÔ
+	cout << ans << endl;
+	return 0;
+}
