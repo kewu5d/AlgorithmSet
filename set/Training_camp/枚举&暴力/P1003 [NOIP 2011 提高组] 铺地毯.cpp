@@ -5,7 +5,7 @@ int n;	//总n张地毯
 int x, y;
 typedef struct
 {
-	int a, b, g, k;
+	int a, b, g, k;//注意：g、k表示长度，不是右下角坐标！
 }date;	//地毯的位置信息 
 date d[10005];
 int main()
@@ -22,16 +22,14 @@ int main()
 	for(int i = n; i >= 1; i--)
 	{
 		//如果这张地毯正好盖住了查询点，输出地毯的编号，结束
-		if (x >= d[i].a && x <= d[i].a + d[i].g)
+		if (x >= d[i].a && x <= d[i].a + d[i].g &&
+		y >= d[i].b && y <= d[i].b + d[i].k)
 		{
-			if (y >= d[i].b && y <= d[i].b + d[i].k)
-			{
-				ans = i;
-				break;//很重要！倒着枚举第一个满足条件的毯子就是 
-			}
+			printf("%d\n", i);
+			return 0;
 		}
 	}
-	printf("%d\n", ans);
+	printf("%d\n", -1);
 	
 	return 0;
 	//主要改进点:
