@@ -21,6 +21,7 @@ int main()
 	int ans = -1;
 	for(int i = n; i >= 1; i--)
 	{
+		//如果这张地毯正好盖住了查询点，输出地毯的编号，结束
 		if (x >= d[i].a && x <= d[i].a + d[i].g)
 		{
 			if (y >= d[i].b && y <= d[i].b + d[i].k)
@@ -33,4 +34,7 @@ int main()
 	printf("%d\n", ans);
 	
 	return 0;
+	//主要改进点:
+	// ? 合并条件判断 - 减少嵌套
+	// ? 直接输出返回 - 避免使用额外变量ans
 }
