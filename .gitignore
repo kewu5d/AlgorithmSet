@@ -109,8 +109,9 @@ dkms.conf
 
 
 # Visual Studio Code
+# !表示例外：不忽略
 .vscode/*
-!.vscode/settings.json
+.vscode/settings.json
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
