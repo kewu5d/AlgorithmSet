@@ -3,11 +3,9 @@
 
 #include <iostream>
 #include <cstdio>
-#include <cmath>
 #include <algorithm>
 using namespace std;
-//int x1, y1;//正方形的左上角边，右下角（x1+ans, y1+ans），ans就是最大边长
-//**全局变量不宜作循环变量
+int x1, y1;//正方形的左上角边，右下角（x1+ans, y1+ans），ans就是最大边长
 int a[105][105];	//array subscript数组下标a[] []不能有空格
 int suma[105][105];
 int main()
@@ -38,9 +36,9 @@ int main()
 	while (ans >=1)
 	{
 		int t = ans-1;//x1+t长度为边长ans
-		for (int x1 = 1; x1+t <=n; x1++)
+		for (x1 = 1; x1+t <=n; x1++)
 		{
-			for (int y1 = 1; y1+t <=m; y1++)
+			for (y1 = 1; y1+t <=m; y1++)
 			{
 				int x = suma[x1+t][y1+t] - suma[x1+t][y1-1] - suma[x1-1][y1+t] + suma[x1-1][y1-1];
 				//cout << x << ' '; 
