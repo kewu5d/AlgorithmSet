@@ -5,32 +5,28 @@
 using namespace std;
 int minSubArrayLen(int target, vector<int>& nums) //引用传参，并非简单的拷贝 
 {
-	int ans = INT_MAX;	//求最小，将其一变量赋为尽可能大值 
+	int n = nums.size();
+	int ans = n+1;	//求最小，将其一变量赋为尽可能大值 
 	int l, r;
 	l = r = 0;
 	int sum = 0;
-	while (r < nums.size()) 
+	while (r <= nums.size()) 
 	{
-		sum += nums[r];
-//		if (sum < target)
-//		{//不合法 
-//			r++;//扩大窗口 
-//			continue; 
-//		}
-		while (l <= r && sum >= target ) 
+		//符合条件
+		if (sum >= target ) 
 		{
-			int x = r-l+1; //记录本次合法区间长度 
-			sum -= nums[l];l++;//缩小窗口 
-			ans = min(ans, x);
+			ans = min(ans, r - l); //记录本次合法区间长度，不要用r-l+1
+			sum -= nums[l++];//缩
+			continue;
 		}
-		r++;
+		//扩
+		if (r == n)break;//此时已经遍历完整个数组
+		sum += nums[r++];//这里不会越界，r++在后
+		//这里r++后r指向的是下一个位置，并不是当前的右边界。所以计算区间长度时，要用r-l
+		
 	}
 	//边界情况，都不满足时
-	if (ans == INT_MAX) 
-	{
-		ans = 0;
-	}
-	return ans;
+	return ans == n+1? 0:ans;
 }
 int t; 
 int n;//数字个数 
