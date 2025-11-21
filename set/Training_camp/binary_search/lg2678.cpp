@@ -1,47 +1,44 @@
 #include <iostream>
-#include <cstdio>
-#include <limits.h>
+#include <algorithm>
 using namespace std;
-int L, N, M;//长度，岩石数（不含起终点） ，最多可移走岩石数 
-int stD[50005];//各石头到起点的距离 
-int maxans;
+const int Num = 50005;
+int dist[Num];//各个石头到起点的距离distance
+int L, N, M;
 int main()
 {
-	cin >> L >> N >> M;
-	for (int i = 1; i <= N; i++)cin >> stD[i];
-	N++;//终点的石头也要算上 ****************
-	stD[N] = L;//终点的岩石
-	int l = 1;
-	int r = L;
-	int now = 0;//now指针，指向现在跳跃的岩石位置 
-	int mid;	//我们去二分答案，求谁mid就是谁 。 最大化mid 
-	
+	cin >> L >> N >> M;//M最多移走石头数
+	for (int i = 0; i < N; i++)cin >> dist[i];//中间N块
+	dist[N] = L;//终点这块石头
+	int l = 1, r = L, mid = 0, res = 0;//res:最大化最短距离
 	while (l <= r)
 	{
-		int cnt = 0;//cnt为按现在这个最短跳跃距离，需要移走的岩石 
-		now = 0;//更新--当前所在石头距离起点的距离
-		mid = (l + r) / 2;//假设跳跃的最小距离 ---------并非下标，就是答案-二分答案 
-		for (int i = 1; i <= N; i++)
-		{
-			if (stD[i]-now >= mid) 
-			{//说明该岩石可以作为台阶 
-				now = stD[i];//跳过来
+		//1. 初始化
+		int now = 0;//当前位置到起点距离
+		int cnt = 0;//移走的石头数
+		mid = l + (r - l) / 2;//二分答案res
+
+		//2. 移石头整个过程
+		for (int i = 0; i <= N; i++)
+		{//这里<=N：遍历所有石头，包括终点(dist[N])
+		//区别：跳到终点石头，不符合条件是移走所在的最后一块
+		//而跳到中间任意石头，不符合条件是移走将要跳的石块
+			if (dist[i] - now >= mid)
+			{
+				now = dist[i];
 			}
-			else cnt++;//不可以作为，需要移走 
+			else cnt++;//必须移走当前这块石头dist[i]（对于终点，逻辑上等同于移走前一块）
 		}
-		if (cnt <= M) 
-		{//合法 
-			maxans = max(maxans, mid);//这个mid可能时最优解 
-			//去右半边猜，最大化最短跳跃距离答案
+		//3. 汇总核查check
+		//这里1.2.可以作函数分离check的bool函数
+		if (cnt <= M)
+		{
+			res = max(res, mid);
+			//最大化
 			l = mid + 1;
 		}
-		else
-		{//不合法，就是移多了岩石，猜大了，去左半边 
-		//猜的越大，移走岩石数会越多 
-			r = mid - 1; 
-		}
+		else r = mid -1;
 	}
-	printf("%d", maxans);
+	cout << res << endl;
 	return 0;
 }
 /*
