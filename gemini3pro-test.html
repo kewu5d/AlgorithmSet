@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="UTF-8">
+    <title>DNA 复制过程演示 (3D)</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #1a1a1a;
+            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        canvas {
+            display: block;
+        }
+        #ui-container {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 8px;
+            pointer-events: none; /* 让鼠标事件穿透到 Canvas */
+        }
+        h1 { margin: 0 0 10px 0; font-size: 24px; color: #4db8ff; }
+        p { margin: 5px 0; font-size: 16px; }
+        .legend { display: flex; gap: 10px; margin-top: 10px; font-size: 12px;}
+        .dot { width: 10px; height: 10px; display: inline-block; border-radius: 50%; margin-right: 5px; }
+        
+        #controls {
+            position: absolute;
+            bottom: 30px;
+            display: flex;
+            gap: 15px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background: #4db8ff;
+            border: none;
+            border-radius: 5px;
+            color: white;
+            transition: background 0.3s;
+        }
+        button:hover { background: #2691d9; }
+        button:disabled { background: #555; cursor: not-allowed; }
+    </style>
+</head>
+<body>
+
+    <div id="ui-container">
+        <h1>DNA 复制演示</h1>
+        <p id="status-text">状态: 准备就绪 - 完整的双螺旋结构</p>
+        <div class="legend">
+            <div><span class="dot" style="background:#ff4444"></span>A (腺嘌呤)</div>
+            <div><span class="dot" style="background:#ffeb3b"></span>T (胸腺嘧啶)</div>
+            <div><span class="dot" style="background:#2196f3"></span>C (胞嘧啶)</div>
+            <div><span class="dot" style="background:#4caf50"></span>G (鸟嘌呤)</div>
+        </div>
+    </div>
+
+    <canvas id="dnaCanvas"></canvas>
+
+    <div id="controls">
+        <button id="btn-unzip" onclick="startUnzip()">1. 解旋 (酶切)</button>
+        <button id="btn-replicate" onclick="startReplicate()" disabled>2. 复制 (合成子链)</button>
+        <button id="btn-reset" onclick="resetDemo()">重置</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('dnaCanvas');
+        const ctx = canvas.getContext('2d');
+        const statusText = document.getElementById('status-text');
+        const btnUnzip = document.getElementById('btn-unzip');
+        const btnReplicate = document.getElementById('btn-replicate');
+
+        let width, height;
+        let angle = 0;
+        let animationId;
+        
+        // 状态机
+        let state = 'idle'; // idle, unzipping, separated, replicating, done
+        let separationFactor = 0; // 0 = 闭合, 1 = 完全分开
+        let replicationProgress = 0; // 0 = 未开始, 1 = 完成
+
+        // DNA 数据结构
+        const numPairs = 25;
+        const pairs = [];
+        const baseColors = {
+            'A': '#ff4444', 'T': '#ffeb3b',
+            'C': '#2196f3', 'G': '#4caf50'
+        };
+
+        // 初始化 DNA 序列
+        function initDNA() {
+            pairs.length = 0;
+            for (let i = 0; i < numPairs; i++) {
+                // 随机生成碱基对
+                const type = Math.random() > 0.5 ? 'AT' : 'CG';
+                const flip = Math.random() > 0.5;
+                let leftBase, rightBase;
+                
+                if (type === 'AT') { leftBase = flip ? 'A' : 'T'; rightBase = flip ? 'T' : 'A'; }
+                else { leftBase = flip ? 'C' : 'G'; rightBase = flip ? 'G' : 'C'; }
+
+                pairs.push({
+                    y: i, // 垂直位置索引
+                    left: leftBase,
+                    right: rightBase,
+                    phase: i * 0.5 // 螺旋相位
+                });
+            }
+        }
+
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        }
+
+        window.addEventListener('resize', resize);
+        resize();
+        initDNA();
+
+        // 3D 投影辅助函数
+        function project(x, y, z) {
+            const scale = 400 / (400 + z);
+            const x2d = x * scale + width / 2;
+            const y2d = y * scale + height / 2;
+            return { x: x2d, y: y2d, scale: scale };
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, width, height);
+            
+            // 自动旋转
+            angle += 0.02;
+
+            // 绘制每一层碱基对
+            // 我们需要根据 Z 轴深度排序，以实现正确的遮挡关系
+            const renderList = [];
+
+            const spacing = 25; // 垂直间距
+            const radius = 100; // 螺旋半径
+            const totalHeight = numPairs * spacing;
+            const startY = -totalHeight / 2;
+
+            pairs.forEach((pair, index) => {
+                const yPos = startY + index * spacing;
+                const currentAngle = angle + pair.phase;
+
+                // 计算 3D 坐标
+                const xBase = Math.cos(currentAngle) * radius;
+                const zBase = Math.sin(currentAngle) * radius;
+
+                // 基础分离距离 (解旋动画)
+                let currentSep = 0;
+                
+                // 模拟解旋酶从下往上工作
+                // 简单的逻辑：如果 separationFactor > 0，根据 index 计算当前层是否分开
+                // 这里的逻辑是整体分开，为了演示清晰
+                const maxSep = 120; // 分开后的最大距离
+                currentSep = separationFactor * maxSep;
+
+                // 左链位置
+                const leftX = xBase - currentSep;
+                const leftZ = zBase;
+                
+                // 右链位置
+                const rightX = -xBase + currentSep;
+                const rightZ = -zBase;
+
+                // 添加到渲染列表
+                renderList.push({
+                    type: 'strand',
+                    side: 'left',
+                    base: pair.left,
+                    x: leftX, y: yPos, z: leftZ,
+                    pairIndex: index
+                });
+
+                renderList.push({
+                    type: 'strand',
+                    side: 'right',
+                    base: pair.right,
+                    x: rightX, y: yPos, z: rightZ,
+                    pairIndex: index
+                });
+
+                // 绘制中间的氢键连接 (如果未完全分开)
+                if (separationFactor < 0.8) {
+                    renderList.push({
+                        type: 'bond',
+                        x1: leftX, y1: yPos, z1: leftZ,
+                        x2: rightX, y2: yPos, z2: rightZ,
+                        opacity: 1 - separationFactor
+                    });
+                }
+
+                // 复制阶段：绘制新合成的子链
+                if (state === 'replicating' || state === 'done') {
+                    // 简单的从下往上生长的效果
+                    if (index / numPairs < replicationProgress) {
+                        // 左侧的新链 (与左母链配对) -> 它是右侧的互补
+                        renderList.push({
+                            type: 'new_strand',
+                            side: 'left_new',
+                            base: pair.right, // 互补碱基
+                            x: leftX + 20, y: yPos, z: leftZ, // 稍微偏移一点
+                            parentX: leftX, parentZ: leftZ
+                        });
+
+                        // 右侧的新链 (与右母链配对) -> 它是左侧的互补
+                        renderList.push({
+                            type: 'new_strand',
+                            side: 'right_new',
+                            base: pair.left, // 互补碱基
+                            x: rightX - 20, y: yPos, z: rightZ,
+                            parentX: rightX, parentZ: rightZ
+                        });
+                        
+                        // 新链的氢键
+                        renderList.push({
+                            type: 'bond',
+                            x1: leftX, y1: yPos, z1: leftZ,
+                            x2: leftX + 20, y2: yPos, z2: leftZ,
+                            color: '#fff', opacity: 1
+                        });
+                         renderList.push({
+                            type: 'bond',
+                            x1: rightX, y1: yPos, z1: rightZ,
+                            x2: rightX - 20, y2: yPos, z2: rightZ,
+                            color: '#fff', opacity: 1
+                        });
+                    }
+                }
+            });
+
+            // 绘制骨架连线 (Backbone) - 需要连接相邻的点
+            // 为了简单起见，我们在画球体之前先画线，但这里为了深度排序，比较复杂。
+            // 简化方案：直接在 renderList 排序后画球，线段单独处理或忽略深度（细线影响不大）
+            
+            // 深度排序：Z 越大越远 (Canvas 坐标系通常 Z 越大越近，这里我们假设 project 函数处理透视)
+            // 我们的 project 函数: scale = 400 / (400 + z). z 越大 scale 越小 -> z 是深度(远离屏幕)
+            renderList.sort((a, b) => {
+                // 取平均 Z
+                let zA = a.z;
+                if(a.z1 !== undefined) zA = (a.z1 + a.z2) / 2;
+                let zB = b.z;
+                if(b.z1 !== undefined) zB = (b.z1 + b.z2) / 2;
+                return zB - zA; // 远的先画
+            });
+
+            renderList.forEach(item => {
+                if (item.type === 'bond') {
+                    const p1 = project(item.x1, item.y1, item.z1);
+                    const p2 = project(item.x2, item.y2, item.z2);
+                    ctx.beginPath();
+                    ctx.moveTo(p1.x, p1.y);
+                    ctx.lineTo(p2.x, p2.y);
+                    ctx.strokeStyle = item.color || `rgba(255, 255, 255, ${item.opacity})`;
+                    ctx.lineWidth = 2 * p1.scale;
+                    ctx.stroke();
+                } else {
+                    const p = project(item.x, item.y, item.z);
+                    const size = (item.type === 'new_strand' ? 6 : 8) * p.scale;
+                    
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, size, 0, Math.PI * 2);
+                    ctx.fillStyle = baseColors[item.base];
+                    ctx.fill();
+                    
+                    // 简单的光照效果
+                    ctx.strokeStyle = 'rgba(0,0,0,0.3)';
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+
+                    // 如果是新链，画个连接线连到母链
+                    if (item.type === 'new_strand') {
+                         const pParent = project(item.parentX, item.y, item.parentZ);
+                         ctx.beginPath();
+                         ctx.moveTo(pParent.x, pParent.y);
+                         ctx.lineTo(p.x, p.y);
+                         ctx.strokeStyle = 'white';
+                         ctx.lineWidth = 1;
+                         ctx.stroke();
+                    }
+                }
+            });
+
+            // 绘制骨架线 (简化版，不参与深度排序，画在最下层或最上层都不完美，但为了演示连贯性)
+            // 实际应用中应该把线段打断放入 renderList
+            drawBackbones(startY, spacing, radius, maxSep);
+
+            animationId = requestAnimationFrame(draw);
+        }
+
+        function drawBackbones(startY, spacing, radius, maxSep) {
+            // 仅演示用，画简单的连线
+            // 略过，因为动态计算复杂，且球体密集时视觉上已经形成了链条感
+        }
+
+        // 动画逻辑
+        function startUnzip() {
+            if (state !== 'idle') return;
+            state = 'unzipping';
+            statusText.innerText = "状态: 解旋酶作用中... 氢键断裂，双链解开";
+            btnUnzip.disabled = true;
+
+            const interval = setInterval(() => {
+                separationFactor += 0.01;
+                if (separationFactor >= 1) {
+                    separationFactor = 1;
+                    state = 'separated';
+                    statusText.innerText = "状态: 解旋完成，形成复制叉。准备合成子链。";
+                    btnReplicate.disabled = false;
+                    clearInterval(interval);
+                }
+            }, 20);
+        }
+
+        function startReplicate() {
+            if (state !== 'separated') return;
+            state = 'replicating';
+            statusText.innerText = "状态: DNA 聚合酶作用中... 遵循碱基互补配对原则 (A-T, C-G)";
+            btnReplicate.disabled = true;
+
+            const interval = setInterval(() => {
+                replicationProgress += 0.005;
+                if (replicationProgress >= 1) {
+                    replicationProgress = 1;
+                    state = 'done';
+                    statusText.innerText = "状态: 复制完成！形成两个完全相同的 DNA 分子 (半保留复制)";
+                    clearInterval(interval);
+                }
+            }, 20);
+        }
+
+        function resetDemo() {
+            state = 'idle';
+            separationFactor = 0;
+            replicationProgress = 0;
+            statusText.innerText = "状态: 准备就绪 - 完整的双螺旋结构";
+            btnUnzip.disabled = false;
+            btnReplicate.disabled = true;
+            initDNA(); // 重新生成随机序列
+        }
+
+        draw();
+
+    </script>
+</body>
+</html>
