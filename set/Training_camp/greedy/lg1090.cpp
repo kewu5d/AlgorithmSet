@@ -1,36 +1,62 @@
 #include <iostream>
 #include <cstdio>
-#include <queue> 
-#define ll long long
+#include <vector>
+#include <algorithm>
+#include <queue>
+
 using namespace std;
-ll ans;
-int main()
-{
-	//数字小的优先级更大 
-	priority_queue<int, vector<int>, greater<int>> q;
-	int n;
-	cin >> n;
-	for (int i = 0; i < n; i++)
-	{
-		int x;
-		cin >> x;
-		q.push(x);//一次排序O(logn)
-	}
-	//每次合并找最小的两堆，倒着 
-	int t;
-	while (q.size() != 1)
-	{
-		t = q.top();//查看队首
-		q.pop();
-		t += q.top();//本次第二少的堆
-		q.pop();
-		q.push(t);
-		ans += t;
-	}
-	//q.size() == 1，不用搬
-	printf("%d\n", ans);
-	return 0;
-	
+
+int main() {
+    int n;
+    scanf("%d", &n);//比cin更快
+
+    vector<int> a(n);
+    for (int i = 0; i < n; i++) {
+        scanf("%d", &a[i]);
+    }
+
+    // 1. 先对初始数据排序
+    sort(a.begin(), a.end());
+
+    // q1 存放初始排序后的果子
+    queue<int> q1;
+    for (int x : a) q1.push(x);
+
+    // q2 存放合并后产生的新果子
+    queue<int> q2;
+
+    long long ans = 0;
+
+    // 执行 n-1 次合并---不同于优先队列判断队列元素个数了！！！
+    for (int i = 0; i < n - 1; i++) {
+        long long x, y;
+
+        // 取第一个最小数
+        if (q2.empty() || (!q1.empty() && q1.front() < q2.front())) {
+            x = q1.front();
+            q1.pop();
+        } else {
+            x = q2.front();
+            q2.pop();
+        }
+
+        // 取第二个最小数
+        if (q2.empty() || (!q1.empty() && q1.front() < q2.front())) {
+            y = q1.front();
+            q1.pop();
+        } else {
+            y = q2.front();
+            q2.pop();
+        }
+
+        // 合并并加入消耗
+        ans += (x + y);
+        // 将新的一堆放入 q2，q2 依然保持单调性
+        q2.push(x + y);
+    }
+
+    printf("%lld\n", ans);
+    return 0;
 }
 /*
 总结
