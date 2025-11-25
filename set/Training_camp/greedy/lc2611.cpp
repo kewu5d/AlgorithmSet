@@ -20,7 +20,7 @@ int miceAndCheese(vector<int>& reward1, vector<int>& reward2, int k) {
 	{
 		gap[i] = reward1[i] - reward2[i];
 	}
-	sort(gap, gap+n);//***********************一定要画图搞明白，排序区间 
+	sort(gap, gap+n);//******************一定要画图搞明白，排序区间 
 	//答案
 	int ans = 0;
 	for (int i = 0; i < n; i++)
@@ -39,19 +39,16 @@ int miceAndCheese(vector<int>& reward1, vector<int>& reward2, int k) {
 int main()
 {
 	int n, k;
-	cin >> n >> k;//n,吃k块 
-	vector<int> r1, r2;
+	cin >> n >> k;//n块,老鼠一吃k块 
+	vector<int> r1(n), r2(n);
 	for (int i = 0; i < n; i++)
 	{
-		int x;
-		cin >> x;
-		r1.push_back(x);
+		//cin >> r1[0];
+		scanf("%d", &r1[i]);
 	}
 	for (int i = 0; i < n; i++)
 	{
-		int x;
-		cin >> x;
-		r2.push_back(x);
+		cin >> r2[i];
 	}
 	int ans = miceAndCheese(r1, r2, k);
 	printf("%d\n", ans);
@@ -61,5 +58,9 @@ int main()
 4 2
 1 1 3 4
 4 4 1 1
+
+2 2
+1 1
+1 1
 */
 
