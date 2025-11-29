@@ -15,30 +15,28 @@ using namespace std;
 class Solution {
 public:
     long long maxSum(vector<int>& nums, int m, int k) {
-        //1. 维护区间和
+        //1. 维护区间和--扩、缩
         //2. check
-        ll n = nums.size();
-        ll l = 0, r = k-1, ans = 0, sum = 0;
-        unordered_set<int> st;
+        int n = nums.size(),l = 0, r = k-1;
+        ll ans = 0, sum = 0;
+        unordered_map<int, int> mp;//映射表（哈希表），记录同一个数的数量
         for (int i = l; i <= r; i++)
         {
             sum += nums[i];
-            st.insert(nums[i]);
+            mp[nums[i]]++;
         }
-        if (st.size() >= m)
+        if (mp.size() >= m)
             ans = max(ans, sum);
         for (r++; r < n; r++, l++)
         {
-            st.insert(nums[r]);
+            mp[nums[r]]++;
             sum += nums[r];
-            if (st.find(nums[l]) != st.end())
-            {//左窗口还找的到
-                st.erase(nums[l]);//时间：2*logN
-                //bug:这里不能把左窗口删掉，因为set是去重了的
-            }
+            mp[nums[l]]--;
+            if (mp[nums[l]] == 0)
+                mp.erase(nums[l]);//这个数没有了，不占子数组唯一个数
             sum -= nums[l];
 
-            if (st.size() >= m)
+            if (mp.size() >= m)
                 ans = max(ans, sum);
         }
         return ans;//不存在几乎唯一子数组，请你返回 0
