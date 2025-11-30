@@ -13,18 +13,23 @@ using namespace std;
 // @lc code=start
 class Solution {
 public:
-    //法一：逆向思维--最小化剩余n-k张牌点和
+    //法二：正向思维--假设全部正着拿。要想最大化，就使倒着拿替换后的和最大化即可
     int maxScore(vector<int>& cardPoints, int k) {
         int n = cardPoints.size();
-        int m = n - k;
-        //这里前m项和[0,m)，在for循环外已经利用reduce求好了
-        int s = reduce(cardPoints.begin(), cardPoints.begin() + m);
-        int min_s = s;
-        for (int i = m; i < n; i++) {
-            s += cardPoints[i] - cardPoints[i - m];//扩缩一步到位
-            min_s = min(min_s, s);
+        // 先计算取前 k 张的分数
+        int sum = 0;//求和可以用reduce或者accumulate完成
+        for (int i = 0; i < k; i++) {
+            sum += cardPoints[i];
         }
-        return reduce(cardPoints.begin(), cardPoints.end()) - min_s;
+        int ans = sum;
+        // 逐步用后面的牌替换前面的牌
+        // 即：减少前面取的，增加后面取的
+        for (int i = 1; i <= k; i++) {
+            sum -= cardPoints[k - i];      // 减去前面第 k-i 张
+            sum += cardPoints[n - i];      // 加上后面第 i 张
+            ans = max(ans, sum);
+        }
+        return ans;
     }
 };
 // @lc code=end
