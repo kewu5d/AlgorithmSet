@@ -15,42 +15,20 @@ using namespace std;
 class Solution {
 public:
     vector<int> getAverages(vector<int>& nums, int k) {
-        //1.维护区间和
-        //2.判断前后是否越界，填数
         int n = nums.size();//下标兼个数
-        vector<int> avgs(n);
-        ll now = 0, sum = 0;//sum：[now-k,now+k]的和
-        //ll l = now-k, r = now+k;
-        for (int i = now-k; i <= now+k; i++)
-        {
-            if (i < 0 || i >= n)
-            {//越界
-                sum += 0;
-            }
-            else sum += nums[i];
-        }
-        if (now-k < 0 || now+k >= n)
-            avgs[now] = -1;
-        else avgs[now] = sum / (2 * k + 1);//外面已经填数一次（窗口）
-        //for循环里面开始填剩下n-1次
-        for (; now < n; )
-        {
-            //1.维护sum
-            if (now-k < 0)
-            {}
-            else sum -= nums[now-k];
-            now++;
-            if (now >= n)
-                break;//完成了遍历，避免越界
-            //没有完成，继续右移
-            if (now+k >= n)
-            {}
-            else sum += nums[now+k];
+        vector<int> avgs(n, -1);
+        ll sum = 0;//sum：[now-k,now+k]的和
+        for (ll i = 0; i < n; i++)
+        {//这个i是整个窗口的最右端--无论这是什么样子的窗口
+            //1.扩
+            sum += nums[i];//最右端i
+            if (i < 2 * k)continue;
 
-            //2.填入
-            if (now-k < 0 || now+k >= n)
-                avgs[now] = -1;
-            else avgs[now] = sum / (2 * k + 1);
+            //2.更新: i-k才是我们要的合法区间的中间元素
+            avgs[i-k] = sum / (2 * k + 1);//其余都是已经初始好的-1
+
+            //3. 缩
+            sum -= nums[i-k-k];//最左端i-2*k
         }
         return avgs;
     }
