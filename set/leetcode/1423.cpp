@@ -13,32 +13,18 @@ using namespace std;
 // @lc code=start
 class Solution {
 public:
+    //法一：逆向思维--最小化剩余n-k张牌点和
     int maxScore(vector<int>& cardPoints, int k) {
-        //将数组复制一份，**尾-首**拼在一起
         int n = cardPoints.size();
-        vector<int> arr(2*n);
-        for (int i=0; i<n; i++)
-        {
-            arr[i] = cardPoints[i];//不要漏了
-            arr[i+n] = cardPoints[i];
+        int m = n - k;
+        //这里前m项和[0,m)，在for循环外已经利用reduce求好了
+        int s = reduce(cardPoints.begin(), cardPoints.begin() + m);
+        int min_s = s;
+        for (int i = m; i < n; i++) {
+            s += cardPoints[i] - cardPoints[i - m];//扩缩一步到位
+            min_s = min(min_s, s);
         }
-        
-        int l = 0, r = k-1, sum = 0, ans = 0;
-        for (int i=l; i<=r; i++)
-        {
-            sum += arr[i];
-        }
-        if (n-1 <= r && r <= n-1+k)//check
-            ans = max(ans, sum);
-        for (r++; r < arr.size(); r++,l++)
-        {
-            sum += arr[r];
-            sum -= arr[l];
-            if (n-1 <= r && r <= n-1+k)
-                ans = max(ans, sum);
-        }
-        return ans;
-
+        return reduce(cardPoints.begin(), cardPoints.end()) - min_s;
     }
 };
 // @lc code=end
