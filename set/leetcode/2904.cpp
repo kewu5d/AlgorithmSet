@@ -5,32 +5,28 @@
 using namespace std;
 class Solution {
 public:
+    //解法2：滑动窗口
     string shortestBeautifulSubstring(string s, int k) {
-        //要求：长度最小+字典序最小
-        //字典序0 < 1
-        //C++20：ranges::count(s, '1')
         if (count(s.begin(), s.end(), '1') < k)return "";
-
-        //法一：枚举
-        
-        for (int len = k; len <= s.size(); len++)
+        int l, r, cnt = 0;//1的个数
+        string ans = s;
+        for (l=r=0; r < s.size(); r++)
         {
-            string ans = "";
-            //固定长度，暴力枚举右窗口
-            for (int i = len; i <= s.size(); i++)
-            {//这里是i <= s.size()，含等于，不要漏了最后一个窗口（因为这不是具体指右窗口的下标）
-                string temp = s.substr(i-len, len);//这才是借助伪右窗口获取子数组
-                if ( (ans.empty() || temp < ans) && count(temp.begin(), temp.end(), '1') == k)
+            //cnt += (int)s[r];//强制转换，是1是0就加对应的---这里是错误的（不同于python）
+            cnt += s[r] - '0';
+            while (cnt >= k)
+            {
+                //合法，更新写在while内
+                string t = s.substr(l, r-l+1);
+                if (t.length() < ans.length() || t.size() == ans.size() && t < ans)
                 {
-                    ans = temp;
+                    ans = t;
                 }
+                //缩左端点---直接缩
+                cnt -= s[l++] - '0';
             }
-            //如果这个长度找到了，即为最短，停止枚举长度，并输出最小字典序字符串
-            if (!ans.empty())return ans;
         }
-        //return "";
-        //1.兜底的返回值  or 2.使用for (int len = k; ; len++)，不约束len<=s.size()
-        //目的：告诉编译器，我已经为函数提供完整的返回值，不用警告了
+        return ans;
     }
 };
 
@@ -38,7 +34,7 @@ int main()
 {
     Solution Sol;
     string a = "100011001";
-    string ans = Sol.shortestBeautifulSubstring(a, 5);
+    string ans = Sol.shortestBeautifulSubstring(a, 3);
     cout << ans << endl;
     return 0;
 }
