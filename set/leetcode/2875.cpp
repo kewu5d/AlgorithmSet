@@ -12,7 +12,7 @@ using namespace std;
 class Solution {
 public:
     int minSizeSubarray(vector<int>& nums, int target) {
-        long long total = accumulate(nums.begin(), nums.end(), 0);
+        long long total = accumulate(nums.begin(), nums.end(), 0LL);
         int k = target / total;
         int rem = target % total;//remainder余数
         int n = nums.size();
