@@ -7,7 +7,7 @@ using namespace std;
 
 class Solution {
 public:
-    bool check(unordered_map<char, int> T, unordered_map<char, int> S)
+    bool check(unordered_map<char, int>& T, unordered_map<char, int>& S)
     {
         for (auto it = S.begin(); it != S.end(); it++)
         {
@@ -19,41 +19,29 @@ public:
     }
 
     string minWindow(string s, string t) {
-        // 重复字符 ，重复出现在子串中
-        // s中找t
-        //s 和 t 由英文字母组成,字符<124
         int m = s.length(), n = t.length();
-        if (m < n)
-            return "";
+        if (m < n) return "";
         unordered_map<char, int> cntT, cntS;
-        for (char i : t) {
-            cntT[i]++;
-            //cntS[i]++;
-        }
-        int ans = n + 1, l, r;
-        int ans_l = 0, ans_r = 0;//记录字串区间
-        for (l = r = 0; r < m; r++) 
-        {
-            if (cntT.find(s[r]) != cntT.end())
-            {
-                cntS[s[r]]++;//在T中找得到,才添加
-            }
-            while (s.size() == t.size() && check(cntT, cntS))
-            {
-                //S的子串中覆盖了T
-                //ans = min(ans, r-l+1);
-                if (r-l+1 < ans)
-                {
-                    ans_l = l;ans_r = r;
-                }
+        for (char c : t) cntT[c]++;//O(n)
 
-                if (cntT.find(s[l]) != cntT.end())
+        int ans = m + 1, ans_l = 0, ans_r = -1;
+        for (int l = 0, r = 0; r < m; ++r) 
+        {
+            //使用count查找，而不是find
+            if (cntT.count(s[r])) cntS[s[r]]++;//T中有的元素
+
+            while (cntS.size() == cntT.size() && check(cntT, cntS)) // 覆盖了就尝试收缩
+            {
+                if (r - l + 1 < ans)
                 {
-                    cntS[s[l++]]--;//缩短窗口
+                    ans = r - l + 1;
+                    ans_l = l; ans_r = r;
                 }
+                if (cntT.count(s[l])) cntS[s[l]]--;
+                ++l;
             }
         }
-        return ans > n? "": s.substr(s[ans_l], ans_r - ans_l + 1);
+        return ans > m ? "" : s.substr(ans_l, ans);
     }
 };
 
